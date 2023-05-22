@@ -1,0 +1,114 @@
+def afn_lambda_to_afd(afn_lambda, start_state):
+    inchidere = {}
+    alfabet = []
+    afd = {}
+    for x in afn_lambda:
+        for y in afn_lambda[x]:
+            if y != 'lambda':
+                alfabet.append(y)
+    alfabet = list(set(alfabet))  # Eliminăm duplicatele din alfabet
+    
+    # Inițializăm dicționarele inchidere și afd
+    for x in afn_lambda:
+        inchidere[x] = []
+        afd[x] = {}
+        k=int(x[-1])
+    
+    # Calculăm închiderile lambda pentru fiecare stare
+    for state in inchidere:
+        inchidere[state] = lambdaexpr(afn_lambda, [state])
+    # Construim tranzitiile AFD-ului
+    for stare in inchidere:
+        for litera in alfabet:
+            afd[stare][litera] = []
+            for starein in inchidere[stare]:
+                if litera in afn_lambda[starein]:
+                    afd[stare][litera].extend(afn_lambda[starein][litera])
+    
+    # Sortăm tranzitiile AFD-ului și eliminăm duplicatetele
+    for stare in afd:
+        for litera in afd[stare]:
+            afd[stare][litera] = sorted(list(set(afd[stare][litera])))
+    
+    # Înlocuim stările AFD-ului cu închiderile lor lambda corespunzătoare
+    for stare in afd:
+        for litera in afd[stare]:
+            newList = []
+            for num in afd[stare][litera]:
+                newList.extend(inchidere[num])
+            afd[stare][litera] = sorted(list(set(newList)))
+    print(afd)
+    afdbun={}
+    new=inchidere[start_state]
+    newnew=[]
+    q=0
+    newnew=''.join(new)
+    afdbun[newnew]={}
+    for litera in alfabet:
+        afdbun[newnew][litera]=afd['q0'][litera]
+    while q!=k:
+        for stare in list(afdbun):
+            for litera in afdbun[stare]:
+                if afdbun[stare][litera]!=[]:
+                    new=[]
+                    newnew=[]
+                    for x in afdbun[stare][litera]:
+                        new.append(afd[x][litera])
+                    for x in new:
+                        for y in x:
+                            newnew.append(y)
+                    newnew=set(newnew)
+                    newnew=sorted(list(newnew))
+                    newnew=''.join(newnew)
+                    if newnew not in afdbun:
+                        afdbun[newnew]={}
+                        for y in alfabet:
+                            afdbun[newnew][y]=[]
+        for stare in list(afdbun):
+            for litera in afdbun[stare]:
+                if afdbun[stare][litera]==[]:
+                    new=[]
+                    newnew=[]
+                    newnewnew=[]
+                    for i in range(0, len(stare), 2):
+                        new.append(stare[i:i+2])
+                    for x in new:
+                        newnew.append(afd[x][litera])
+                    for x in newnew:
+                        for y in x:
+                            newnewnew.append(y)
+                    newnewnew=set(newnewnew)
+                    newnewnew=sorted(list(newnewnew))
+                    afdbun[stare][litera]=newnewnew
+                    newnewnew=''.join(newnewnew)
+                    if newnewnew not in afdbun:
+                        afdbun[newnewnew]={}
+                        for y in alfabet:
+                            afdbun[newnewnew][y]=[]
+        q=q+1
+    return afdbun
+def lambdaexpr(afn_lambda, states):
+    closure = list(states)
+    temp = list(states)
+    while len(temp) != 0:
+        state = temp.pop()
+        if 'lambda' in afn_lambda[state]:
+            for next_state in afn_lambda[state]['lambda']:
+                if next_state not in closure:
+                    closure.append(next_state)
+                    temp.append(next_state)
+    return sorted(closure)
+afn_lambda = {
+    'q0': {'a': ['q0','q1'], 'lambda': ['q2','q3'], 'b':['q2']},
+    'q1': {'lambda': ['q2']},
+    'q2': {'lambda': ['q4'],'a':['q3']},
+    'q3': {'a': ['q6'], 'lambda': ['q5'], 'b':['q3','q6']},
+    'q4': {'a': ['q6'], 'lambda': ['q6'], 'b':['q5']},
+    'q5': {'a': ['q6'], 'lambda': ['q2','q6'], 'b':['q2']},
+    'q6': {'b':['q6']},
+}
+start_state = 'q0'
+
+afd = afn_lambda_to_afd(afn_lambda, start_state)
+
+print(afd)
